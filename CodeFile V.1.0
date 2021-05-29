@@ -1,0 +1,1111 @@
+#include <stdio.h>
+#include <string.h>
+#include <locale.h>
+#include <time.h>
+#include <stdlib.h>
+#include <windows.h>
+
+int const SMBaslama=8, SMGenislik=28, YMSatir=8, YMSutun =40, YMGenislik=18, IcerikSatir=11, IcerikSutun=40, IcerikEtiket=20, IcerikGenislik=18, YUKSEKLIK=1;
+short satir, kolon, karakter=219 , DMSecim=0, YMSecim=0, KBSecim=0, YAPSecim=0, SBSecim=0, ss, GirisKontrol=0;
+char ListeSecim[3]="0";
+unsigned char tus;
+enum boolean{ F, T }durum=T;
+void DikeyMenuSecim();void YakinaAitBilgi(); void SaglikBilgi();void YatayMenu(short s, short byt);void SakinListele();void YatayMenuSecim();void KYatayMenuSecim();void sifreEkrani();
+struct Menu{
+	char baslik[25]; 
+	short uzunluk;   
+	short AltBaslikAdet;
+	char AltBaslik[5][18];
+};
+struct Icerik {
+	char e[20]; //etiket
+	char i[25]; // icerik
+};
+typedef struct{
+	char tc[25],adi[25],soyadi[25],dogum[25],yakin[25],yadi[25],ysoyadi[25],ytel[25],tani[25],ilac[25],klnsekli[25],klnskl[25];
+}Kisi;
+
+typedef struct {
+	char tarih[12];
+	char saat[5];
+	short kat;
+	short oda;
+	char ariza[75];
+	short durum;
+}arizalar;
+
+struct Menu SolMenuBasliklari [8]={
+		{"K A Y I T",9,4,{"Kisisel Bilgi","Yakina Ait Bilgi","Saglik Bilgi","KAPAT"}},
+		{"S A K I N L E R",15,2,{"Listele","KAPAT"}},
+		{"A R I Z A  & T A L E P",22,3,{"Ariza","Talep","KAPAT"}},
+		{"P E R S O N E L",15,2,{"Listele","KAPAT"}},
+		{"D E P O",7,4,{"Urun Giris","Urun Cikis","Listele","KAPAT"}},
+		{"G U N L U K",11,5,{"Kahvalti","Ogle","Aksam","Etkinlik","KAPAT"}},
+		{"H A K K I M I Z D A",19,0,{0}},
+		{"C I K I S",9,0,{0}}
+	};
+struct Icerik KisiselBilgiBaslik [4]={
+	{"TC Numarasi","____________________"},
+	{"Adi","____________________"},
+	{"Soyadi","____________________"},
+	{"Dogum Tarihi","____________________"},
+};
+struct Icerik YakinaAitBilgiBaslik [4]={
+	{"Yakinligi","____________________"},
+	{"Adi","____________________"},
+	{"Soyadi","____________________"},
+	{"Telefon","____________________"},
+};
+struct Icerik SaglikBilgiBaslik [4]={
+	{"Tani","____________________"},
+	{"Ilac Adi","____________________"},
+	{"Kullanim Sekli","____________________"},
+	{"Kullanim Sikligi","____________________"},
+};
+
+struct Menu SakinSolMenuBasliklari [10]={
+		{"K I S I S E L  B I L G I",24,2,{"Duzenle", "KAPAT"}},
+		{"Y A K I N  B I L G I",20,2,{"Duzenle", "KAPAT"}},
+		{"S A G L I K  B I L G I",22,2,{"Duzenle", "KAPAT"}},
+		{"Y E M E K  L I S T E",20,4,{"Kahvalti", "Ogle","Aksam","KAPAT"}},
+		{"E T K I N L I K",15,5,{"Sinema","Tiyatro","Konser","Yuruyus", "KAPAT"}},
+		{"A R I Z A  B I L D I R",22,2,{"Bildir","KAPAT"}},
+		{"T A L E P  B I L D I R",22,2,{"Bildir","KAPAT"}},
+		{"S I F R E",9,2,{"Degistir","KAPAT"}},
+		{"H A K K I M I Z D A",19,0,{0}},
+		{"C I K I S",9,0,{0}}
+	};
+
+void TamEkran(){
+	HWND hWnd = GetConsoleWindow();
+	ShowWindow(hWnd,SW_SHOWMAXIMIZED);  // Console tam ekran yapılıyor
+}
+void ImlecGizle(){
+   HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+   CONSOLE_CURSOR_INFO info;
+   info.dwSize = 100;
+   info.bVisible = FALSE;
+   SetConsoleCursorInfo(consoleHandle, &info);
+}
+void ImlecGoster(){
+   HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+   CONSOLE_CURSOR_INFO info;
+   info.dwSize = 100;
+   info.bVisible = TRUE;
+   SetConsoleCursorInfo(consoleHandle, &info);
+}
+void git(int s,int k){
+	HANDLE hConsoleOutput;
+	COORD ImlecYeri={k-1,s-1};
+	hConsoleOutput=GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleCursorPosition(hConsoleOutput, ImlecYeri);
+}
+void Isaretle(short x, short y, short u, short d){
+	int i;
+	if(d){
+		git(x-1,y-2);printf("%c",218);for(i=0;i<u+2;i++){printf("%c",196);}printf("%c",191);
+		git(x,y-2);printf("%c",179);git(x,y+u+1);printf("%c",179);
+		git(x+1,y-2);printf("%c",192);for(i=0;i<u+2;i++){printf("%c",196);}printf("%c",217);
+	}else{
+		git(x-1,y-2);printf(" ");for(i=0;i<u+2;i++){printf(" ");}printf(" ");
+		git(x,y-2);printf(" ");git(x,y+u+1);printf(" ");
+		git(x+1,y-2);printf(" ");for(i=0;i<u+2;i++){printf(" ");}printf(" ");
+	}
+}
+void IcerikYazIsaretle(short x, short y, short u, short d, char icerik[25]){
+	int i;
+	if(d){
+		git(x-1,y);printf("%c",218);for(i=0;i<u;i++){printf("%c",196);}printf("%c",191);
+		git(x,y);printf("%c",179);git(x,y+u+1);printf("%c",179);
+		git(x+1,y);printf("%c",192);for(i=0;i<u;i++){printf("%c",196);}printf("%c",217);
+	}else{
+		git(x-1,y);printf(" ");for(i=0;i<u;i++){printf(" ");}printf(" ");
+		git(x,y);printf(" ");git(x,y+u+1);printf(" ");
+		git(x+1,y);printf(" ");for(i=0;i<u;i++){printf(" ");}printf(" ");
+		git(x,y);printf(":%s",icerik);
+	}	
+	
+}
+void DikeyMenu(struct Menu M[], short byt, short x, short w){
+	int i;
+	for(i=0;i<byt;i++){git(x+2*i,(w-M[i].uzunluk)/2+3);printf("%s",M[i].baslik);}
+	Isaretle(x,(w-M[0].uzunluk)/2+3,M[0].uzunluk,1);
+}
+void YatayMenu(short s, short byt){
+	int i;
+	for(i=0;i<byt;i++){
+		git(YMSatir,YMSutun + YMGenislik*i);
+		printf("%s",SolMenuBasliklari[s].AltBaslik[i]);
+	}
+	Isaretle(YMSatir,YMSutun,strlen(SolMenuBasliklari[s].AltBaslik[0]),1);
+}
+void EkranTaslak(){
+	TamEkran();ImlecGizle();
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi); 
+	satir = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;  // Concole ekran yüksekliği alınıyor  63
+	kolon = csbi.srWindow.Right - csbi.srWindow.Left + 1; // Console ekran genişliği alınıyor 237
+	short i,j;
+	for(i=0;i<satir-YUKSEKLIK;i++){
+		for(j=0;j<kolon;j++){
+			if( i==0 || i==(satir-YUKSEKLIK-1) ){git(i+1,j+1);printf("%c",karakter);}
+			if( j<2 || j>kolon-3 ){git(i+1,j+1);printf("%c",karakter);}
+			if(GirisKontrol>0){
+				if ( (j==30 || j==31) && (i>4 && i<(58-YUKSEKLIK)  ) ){git(i+1,j+1);printf("%c",karakter);}
+			}
+		}
+	}
+	for(i=1;i<kolon;i++){git(5,i);printf("%c",219);}
+	git(3,kolon/2-18); printf("H U Z U R E V I  O T O M A S Y O N U");
+	for(i=1;i<kolon;i++){git(satir-4-YUKSEKLIK,i);printf("%c",219);}
+	
+	git(satir-2-YUKSEKLIK,5); printf("BILGISAYAR PROGRAMLAMA 1 | DONEM PROJESI");
+	git(satir-2-YUKSEKLIK,kolon-50); printf("MARMARA UNIVERSITESI | BILGISAYAR MUHENDISLIGI");
+	
+}
+void TarihSaatBilgisi(){
+	git(3,kolon-25);
+	time_t t = time(NULL);
+  	struct tm tm = *localtime(&t);
+  	printf("%d/%02d/%02d %02d:%02d:%02d\n",  tm.tm_mday,tm.tm_mon + 1,tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
+}
+void Temizle(){
+	int i,j;
+	for(i=6;i<satir-5;i++){
+		for(j=IcerikSutun-2;j<kolon-1;j++){git(i,j);printf(" ");}
+	}	
+}
+void IcerikTemizle(){
+	int i,j;
+	for(i=11;i<satir-5;i++){
+		for(j=IcerikSutun-2;j<kolon-1;j++){
+			git(i,j);printf(" ");
+		}
+	}
+}
+void VarsayilanDegerler(){
+	strcpy(KisiselBilgiBaslik[0].i,"____________________");
+	strcpy(KisiselBilgiBaslik[1].i,"____________________");
+	strcpy(KisiselBilgiBaslik[2].i,"____________________");
+	strcpy(KisiselBilgiBaslik[3].i,"____________________");
+	strcpy(YakinaAitBilgiBaslik[0].i,"____________________");
+	strcpy(YakinaAitBilgiBaslik[1].i,"____________________");
+	strcpy(YakinaAitBilgiBaslik[2].i,"____________________");
+	strcpy(YakinaAitBilgiBaslik[3].i,"____________________");
+	strcpy(SaglikBilgiBaslik[0].i,"____________________");
+	strcpy(SaglikBilgiBaslik[1].i,"____________________");
+	strcpy(SaglikBilgiBaslik[2].i,"____________________");
+	strcpy(SaglikBilgiBaslik[3].i,"____________________");
+}
+void Buton(short x, short y, char b[]){git(x,y); printf("%s",b);}
+
+void KisiselBilgiGiris(){
+	int j;
+	for(j=0;j<4;j++){
+		git(IcerikSatir+2*j,IcerikSutun);printf("%s",KisiselBilgiBaslik[j].e );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket);printf(":" );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket+1);printf("%s",KisiselBilgiBaslik[j].i );
+	}
+	Isaretle(IcerikSatir,IcerikSutun+IcerikEtiket+2,IcerikGenislik,1);
+	Buton(IcerikSatir+(4+1)*2,65,"IPTAL");Buton(IcerikSatir+(4+1)*2,75,"ILERI");
+}
+void YakinaAitBilgiGiris(){
+	int j;
+	for(j=0;j<4;j++){
+		git(IcerikSatir+2*j,IcerikSutun);printf("%s",YakinaAitBilgiBaslik[j].e );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket);printf(":" );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket+1);printf("%s",YakinaAitBilgiBaslik[j].i );
+	}
+	Isaretle(IcerikSatir,IcerikSutun+IcerikEtiket+2,IcerikGenislik,1);
+	Buton(IcerikSatir+(4+1)*2,65,"IPTAL");Buton(IcerikSatir+(4+1)*2,75,"ILERI");
+}
+void SaglikBilgiGiris(){
+	int j;
+	for(j=0;j<4;j++){
+		git(IcerikSatir+2*j,IcerikSutun);printf("%s",SaglikBilgiBaslik[j].e );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket);printf(":" );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket+1);printf("%s",SaglikBilgiBaslik[j].i );
+	}
+	Isaretle(IcerikSatir,IcerikSutun+IcerikEtiket+2,IcerikGenislik,1);
+	Buton(IcerikSatir+(4+1)*2,65,"IPTAL");Buton(IcerikSatir+(4+1)*2,75,"KAYDET");
+}
+
+
+void DosyayaYaz(char dsyAdi[15], Kisi k){
+	FILE *fp;
+	fp=fopen(dsyAdi,"a+");
+	if(fp==NULL){printf("dosya acilmadi");exit(1); }
+	if(fwrite(&k,sizeof(k),1,fp)!=1){printf("Yazamadi");exit(1);}
+	fclose(fp);
+}
+void DosyaOku(char dsyAdi[15], short x, short y, int g[]){
+	FILE *fp;
+	Kisi k;
+	short say=1,i,j,kk;
+	fp=fopen(dsyAdi,"rb+");
+	if(fp==NULL){printf("dosya acilmadi");exit(1); }
+	
+	if(x==0){
+		while(fread(&k,sizeof(k),1,fp)==1){
+			if(say==y){
+				strcpy(KisiselBilgiBaslik[0].i,k.tc);
+				strcpy(KisiselBilgiBaslik[1].i,k.adi);
+				strcpy(KisiselBilgiBaslik[2].i,k.soyadi);
+				strcpy(KisiselBilgiBaslik[3].i,k.dogum);
+				strcpy(YakinaAitBilgiBaslik[0].i,k.yakin);
+				strcpy(YakinaAitBilgiBaslik[1].i,k.yadi);
+				strcpy(YakinaAitBilgiBaslik[2].i,k.ysoyadi);
+				strcpy(YakinaAitBilgiBaslik[3].i,k.ytel);
+				strcpy(SaglikBilgiBaslik[0].i,k.tani);
+				strcpy(SaglikBilgiBaslik[1].i,k.ilac);
+				strcpy(SaglikBilgiBaslik[2].i,k.klnsekli);
+				strcpy(SaglikBilgiBaslik[3].i,k.klnskl);
+			}say++;
+		}
+	}else{
+					while(fread(&k,sizeof(k),1,fp)==1){
+							git(x+2*say,y);
+							for(i=0;i<3;i++){
+								if(i ==0){printf("%c",195);}
+								for(j=0;j<g[i];j++){printf("%c",196);}
+								if(i==2){printf("%c",180);}else{printf("%c",197);}
+							}
+							kk=0;git(x+2*say+1,y+kk);printf("%c",179);
+							for(i=0;i<3;i++){kk+=g[i]+1;git(x+2*say+1,y+kk);printf("%c",179);}
+							
+							git(x+say*2+1,y+2);printf("%d",say);
+							git(x+say*2+1,y+3+(27-11)/2+2);printf("%s",k.tc  );
+							git(x+say*2+1,y+30+(27-10)/2+4);printf("%s %s",k.adi,k.soyadi);
+							say++;
+					}
+							git(x+say*2,y);
+							for(i=0;i<3;i++){
+								if(i ==0){printf("%c",192);}
+								for(j=0;j<g[i];j++){printf("%c",196);}
+								if(i==2){printf("%c",217);}else{printf("%c",193);}
+							}
+	}
+	fclose(fp);
+}
+void Kaydet(){
+	Kisi sakin;
+	strcpy(sakin.tc, KisiselBilgiBaslik[0].i);
+	strcpy(sakin.adi,KisiselBilgiBaslik[1].i);
+	strcpy(sakin.soyadi , KisiselBilgiBaslik[2].i);
+	strcpy(sakin.dogum  ,KisiselBilgiBaslik[3].i);
+	strcpy(sakin.yakin  , YakinaAitBilgiBaslik[0].i);
+	strcpy(sakin.yadi  ,YakinaAitBilgiBaslik[1].i);
+	strcpy(sakin.ysoyadi , YakinaAitBilgiBaslik[2].i);
+	strcpy(sakin.ytel ,YakinaAitBilgiBaslik[3].i);
+	strcpy(sakin.tani , SaglikBilgiBaslik[0].i);
+	strcpy(sakin.ilac ,SaglikBilgiBaslik[1].i);
+	strcpy(sakin.klnsekli  , SaglikBilgiBaslik[2].i);
+	strcpy(sakin.klnskl ,SaglikBilgiBaslik[3].i);
+	DosyayaYaz("sakinler.dat", sakin);
+	VarsayilanDegerler();
+}
+
+void EkleIleri2(){
+		durum=T;short ss=77,j,i=1;
+		Isaretle(IcerikSatir+(4+1)*2,74,7,1);
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 77:   //sağ yön tuşu
+						ss=77;
+						Isaretle(IcerikSatir+(4+1)*2,64,7,0);
+						Isaretle(IcerikSatir+(4+1)*2,74,7,1);
+						break;
+					case 75:  // sol yön tuşu
+						ss=75;
+						Isaretle(IcerikSatir+(4+1)*2,74,7,0);
+						Isaretle(IcerikSatir+(4+1)*2,64,7,1);
+						break;
+				}
+			}else if(tus==13){
+				if (ss==75){
+					//LİSTEYE DONÜLECEK
+					SakinListele();VarsayilanDegerler();
+					//VarsayilanDegerler();KBSecim=0, YAPSecim=0, SBSecim=0;YMSecim=0;Temizle();DikeyMenuSecim();durum=F;
+				}else if(ss==77){
+					// SECİM ILERLEYECEK
+					if(i==1){
+						IcerikTemizle();
+						for(j=0;j<4;j++){
+							git(IcerikSatir+2*j,IcerikSutun);printf("%s",YakinaAitBilgiBaslik[j].e );
+							git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket);printf(":" );
+							git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket+1);printf("%s",YakinaAitBilgiBaslik[j].i );
+						}Buton(IcerikSatir+(4+1)*2,65,"LISTE");Buton(IcerikSatir+(4+1)*2,75,"ILERI");
+						Isaretle(YMSatir,YMSutun+YMGenislik*0,strlen(SolMenuBasliklari[0].AltBaslik[0]),0);
+						Isaretle(YMSatir,YMSutun+YMGenislik*1,strlen(SolMenuBasliklari[0].AltBaslik[1]),1);
+						Isaretle(IcerikSatir+(4+1)*2,74,7,1);
+						i++;
+					}else if(i==2){
+						IcerikTemizle();
+						for(j=0;j<4;j++){
+							git(IcerikSatir+2*j,IcerikSutun);printf("%s",SaglikBilgiBaslik[j].e );
+							git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket);printf(":" );
+							git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket+1);printf("%s",SaglikBilgiBaslik[j].i );
+						}Buton(IcerikSatir+(4+1)*2,65,"LISTE");Buton(IcerikSatir+(4+1)*2,75,"KAPAT");
+						Isaretle(YMSatir,YMSutun+YMGenislik*1,strlen(SolMenuBasliklari[0].AltBaslik[1]),0);
+						Isaretle(YMSatir,YMSutun+YMGenislik*2,strlen(SolMenuBasliklari[0].AltBaslik[2]),1);
+						Isaretle(IcerikSatir+(4+1)*2,74,7,1);
+						i++;
+					}else{
+						SakinListele();VarsayilanDegerler();
+						Isaretle(IcerikSatir+(4+1)*2,74,7,1);
+					}			
+				}
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}	
+}
+void EkleIleri(){
+		durum=T;short ss=75;
+		Isaretle(IcerikSatir+(4+1)*2,64,7,1);
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 77:   //sağ yön tuşu
+						ss=77;
+						Isaretle(IcerikSatir+(4+1)*2,64,7,0);
+						Isaretle(IcerikSatir+(4+1)*2,74,7,1);
+						break;
+					case 75:  // sol yön tuşu
+						ss=75;
+						Isaretle(IcerikSatir+(4+1)*2,74,7,0);
+						Isaretle(IcerikSatir+(4+1)*2,64,7,1);
+						break;
+				}
+			}else if(tus==13){
+				if (ss==75){
+					VarsayilanDegerler();KBSecim=0, YAPSecim=0, SBSecim=0;YMSecim=0;Temizle();DikeyMenuSecim();durum=F;
+				}else if(ss==77){
+					durum=F;IcerikTemizle();KBSecim=0;
+					if(YMSecim==0){
+						YakinaAitBilgi();
+					}else if(YMSecim==1){
+						SaglikBilgi();
+					}else if(YMSecim==2){
+						Kaydet();KBSecim=0, YAPSecim=0, SBSecim=0;YMSecim=0;Temizle();DikeyMenuSecim();durum=F;
+					}
+				}
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}	
+}
+void YakinaAitBilgi(){
+		YakinaAitBilgiGiris();
+		Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),0);
+		YMSecim=1;Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),1);
+		durum=T;int i;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 72:   //sağ yön tuşu
+						IcerikYazIsaretle(IcerikSatir+2*YAPSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,0,YakinaAitBilgiBaslik[YAPSecim].i);
+						YAPSecim--;
+						break;
+					case 80:  // sol yön tuşu
+						IcerikYazIsaretle(IcerikSatir+2*YAPSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,0,YakinaAitBilgiBaslik[YAPSecim].i);
+						YAPSecim++;
+						break;
+				}
+				if (YAPSecim==4){
+					durum=F;EkleIleri();
+				}
+				YAPSecim=(YAPSecim==4)?3:YAPSecim;
+				YAPSecim=(YAPSecim==-1)?0:YAPSecim;
+				IcerikYazIsaretle(IcerikSatir+2*YAPSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,1,YakinaAitBilgiBaslik[YAPSecim].i);	
+			}else if(tus==13){
+				git(IcerikSatir+2*YAPSecim,IcerikSutun+IcerikEtiket+1);
+				for(i=0;i<IcerikGenislik+2;i++){printf(" ");}
+				git(IcerikSatir+2*YAPSecim,IcerikSutun+IcerikEtiket+1);
+				printf("");
+				gets(YakinaAitBilgiBaslik[YAPSecim].i);
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}	
+}
+void SaglikBilgi(){
+		SaglikBilgiGiris();
+		Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),0);
+		YMSecim=2;Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),1);
+		durum=T;int i;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 72:   //sağ yön tuşu
+						IcerikYazIsaretle(IcerikSatir+2*SBSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,0,SaglikBilgiBaslik[SBSecim].i);
+						SBSecim--;
+						break;
+					case 80:  // sol yön tuşu
+						IcerikYazIsaretle(IcerikSatir+2*SBSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,0,SaglikBilgiBaslik[SBSecim].i);
+						SBSecim++;
+						break;
+				}
+				if (SBSecim==4){durum=F;EkleIleri();}
+				SBSecim=(SBSecim==-1)?0:SBSecim;
+				IcerikYazIsaretle(IcerikSatir+2*SBSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,1,SaglikBilgiBaslik[SBSecim].i);	
+			}else if(tus==13){
+				git(IcerikSatir+2*SBSecim,IcerikSutun+IcerikEtiket+1);
+				for(i=0;i<IcerikGenislik+2;i++){printf(" ");}
+				git(IcerikSatir+2*SBSecim,IcerikSutun+IcerikEtiket+1);
+				printf("");
+				gets(SaglikBilgiBaslik[SBSecim].i);
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}	
+}
+void KisiselBilgi(){
+		KisiselBilgiGiris();
+		durum=T;int i;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 72:   //yukarı yön tuşu
+						IcerikYazIsaretle(IcerikSatir+2*KBSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,0,KisiselBilgiBaslik[KBSecim].i);
+						KBSecim--;
+						break;
+					case 80:  // aşağo yön tuşu
+						IcerikYazIsaretle(IcerikSatir+2*KBSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,0,KisiselBilgiBaslik[KBSecim].i);
+						KBSecim++;
+						break;
+				}
+				if (KBSecim==4){durum=F;EkleIleri();}
+				KBSecim=(KBSecim==-1)?0:KBSecim;
+				IcerikYazIsaretle(IcerikSatir+2*KBSecim,IcerikSutun+IcerikEtiket,IcerikGenislik+2,1,KisiselBilgiBaslik[KBSecim].i);	
+			}else if(tus==13){
+				git(IcerikSatir+2*KBSecim,IcerikSutun+IcerikEtiket+1);
+				for(i=0;i<IcerikGenislik+2;i++){printf(" ");}
+				git(IcerikSatir+2*KBSecim,IcerikSutun+IcerikEtiket+1);
+				printf("");
+				gets(KisiselBilgiBaslik[KBSecim].i);
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}	
+}
+
+void TabloOlustur(short x, short y, short secim,short detay, short sil,short kapat ){
+	int i,j, k ,genislik[3]={3,27,27};
+	git(x,y);
+	git(x,y+secim);printf("S E C I M : __________");
+	git(x,y+secim+detay);printf("DETAY");
+	git(x,y+secim+detay+sil);printf("SIL");
+	git(x,y+secim+detay+sil+kapat);printf("KAPAT");
+	x=x+2;
+	git(x,y);	
+	
+	for(i=0;i<3;i++){
+		if(i ==0){printf("%c",218);}
+		for(j=0;j<genislik[i];j++){printf("%c",196);}
+		if(i==2){printf("%c",191);}else{printf("%c",194);}
+	}
+	k=0;git(x+1,y+k);printf("%c",179);
+	for(i=0;i<3;i++){k+=genislik[i]+1;git(x+1,y+k);printf("%c",179);}
+
+	git(x+1,y+3+(27-18)/2+2);printf("TC KIMLIK NUMARASI");
+	git(x+1,y+30+(27-10)/2+4);printf("ADI SOYADI");
+	DosyaOku("sakinler.dat", x,y, genislik);
+	
+}
+void SakinDetayGetir(int x){
+	short j;
+	Temizle();YatayMenu(0, SolMenuBasliklari[0].AltBaslikAdet);
+	DosyaOku("sakinler.dat", 0,x, 0); YatayMenu(0, SolMenuBasliklari[0].AltBaslikAdet);
+	
+	for(j=0;j<4;j++){
+		git(IcerikSatir+2*j,IcerikSutun);printf("%s",KisiselBilgiBaslik[j].e );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket);printf(":" );
+		git(IcerikSatir+2*j,IcerikSutun+IcerikEtiket+1);printf("%s",KisiselBilgiBaslik[j].i );
+	}Buton(IcerikSatir+(4+1)*2,65,"LISTE");Buton(IcerikSatir+(4+1)*2,75,"ILERI");
+	EkleIleri2();
+}
+void SakinSil(int x){
+	FILE *fp, *fc;
+	Kisi k;
+	short say=1;
+	fp=fopen("sakinler.dat","rb+");
+	if(fp==NULL){printf("dosya acilmadi");exit(1); }
+	while(fread(&k,sizeof(k),1,fp)==1){
+		if (x!=say){
+			DosyayaYaz("copy.dat", k);	
+		}say++;
+	}
+	fclose(fp);
+	remove("sakinler.dat");
+	rename("copy.dat", "sakinler.dat");
+}
+void SakinListele(){
+	int i, Si=0, SList[4][2]={ {18,8},{34,5},{44,3},{54,5} };
+	Temizle();
+	TabloOlustur(YMSatir,IcerikSutun,5,29,10,10);
+	Isaretle(YMSatir,IcerikSutun+SList[Si][0],SList[Si][1],1);
+		durum=T;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 75:   //sol yön tuşu
+						Isaretle(YMSatir,IcerikSutun+SList[Si][0],SList[Si][1],0);
+						Si--;
+						break;
+					case 77:  // sag yön tuşu
+						Isaretle(YMSatir,IcerikSutun+SList[Si][0],SList[Si][1],0);
+						Si++;
+						break;
+				}
+				Si=(Si==4)?0:Si;
+				Si=(Si==-1)?3:Si;
+				Isaretle(YMSatir,IcerikSutun+SList[Si][0],SList[Si][1],1);
+			}else if(tus==13){
+				if (Si==0){
+					git(YMSatir,IcerikSutun+SList[0][0]-1);
+					for(i=0;i<10;i++){printf(" ");}
+					git(YMSatir,IcerikSutun+SList[0][0]-1);
+					printf("");
+					gets(ListeSecim);
+				}else if(Si==1){
+					//detay
+					if ((int)ListeSecim[0]==0 || (int)ListeSecim[0]==48){
+					}else{
+						SakinDetayGetir((int)ListeSecim[0]-48);durum=F;
+					}
+				}else if(Si==2){
+					//sil
+					if ((int)ListeSecim[0]==0 || (int)ListeSecim[0]==48 || ListeSecim[0]=='0'){
+					}else{
+						SakinSil((int)ListeSecim[0]-48);durum=F;SakinListele();strcpy(ListeSecim,"");
+					}
+				}else if(Si==3){
+					Temizle();YMSecim=0;DikeyMenuSecim();
+				}
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}
+
+}
+
+void ArizaListele(char dosyaadi[]){
+	IcerikTemizle();
+	int i,j, kk ,say=1,genislik[6]={3,12,7,3,3,50},x=YMSatir+3,y=IcerikSutun;
+	git(x,y);
+	for(i=0;i<6;i++){
+		if(i ==0){printf("%c",218);}
+		for(j=0;j<genislik[i];j++){printf("%c",196);}
+		if(i==5){printf("%c",191);}else{printf("%c",194);}
+	}
+	kk=0;git(x+1,y+kk);printf("%c",179);
+	for(i=0;i<6;i++){kk+=genislik[i]+1;git(x+1,y+kk);printf("%c",179);}
+
+	git(x+1,y+(22-5)/2);printf("TARIH");
+	git(x+1,y+16+(6-4)/2+2);printf("SAAT");
+	git(x+1,y+26);printf("KAT");
+	git(x+1,y+30);printf("ODA");
+	if (strcmp(dosyaadi,"ariza.dat")){
+		git(x+1,y+37);printf("TALEP");
+	}else{
+		git(x+1,y+37);printf("ARIZA");
+	}
+	
+
+	FILE *fp;
+	fp=fopen(dosyaadi,"r+");
+	arizalar n;
+	if(fp==NULL){printf("dosya acilmadi");exit(1); }
+	while(fread(&n,sizeof(n),1,fp)==1){
+		git(x+2*say,y);
+			for(i=0;i<6;i++){
+				if(i ==0){printf("%c",195);}
+				for(j=0;j<genislik[i];j++){printf("%c",196);}
+				if(i==5){printf("%c",180);}else{printf("%c",197);}
+			}
+			kk=0;git(x+2*say+1,y+kk);printf("%c",179);
+			for(i=0;i<6;i++){kk+=genislik[i]+1;git(x+2*say+1,y+kk);printf("%c",179);}
+			
+			git(x+say*2+1,y+2);printf("%d",say);
+			git(x+say*2+1,y+6);printf("%s",n.tarih);
+			git(x+say*2+1,y+19);printf("%s",n.saat);
+			git(x+say*2+1,y+27);printf("%d",n.kat);
+			git(x+say*2+1,y+31);printf("%d",n.oda);
+			git(x+say*2+1,y+36);printf("%s",n.ariza);
+		say++;
+	}
+			git(x+say*2,y);
+			for(i=0;i<6;i++){
+				if(i ==0){printf("%c",192);}
+				for(j=0;j<genislik[i];j++){printf("%c",196);}
+				if(i==5){printf("%c",217);}else{printf("%c",193);}
+			}
+	fclose(fp);YatayMenuSecim();
+}
+void hakkimizda(x,y,w,h){
+	int i,k;FILE *fp;
+	k=(w-y)/10;
+	while(1){
+		for(i=1;i<w;i++){
+			git(x,y);printf("%c",196);y++;
+		if (i==k){
+				git(x,y);printf("%c",217);x--;
+				git(x,y);printf("%c",179);x--;
+				git(x,y);printf("%c",218);y++;}
+				if (i==w-k){
+					git(x,y);printf("%c",191);x++;
+					git(x,y);printf("%c",179);x++;
+					git(x,y);printf("%c",192);y++;}
+					Sleep(1);
+		}x++;y--;
+		for(i=w;i>1;i--){
+			git(x,y);printf("%c",196);y--;
+			if (i==k+2){
+				git(x,y);printf("%c",192);x--;
+				git(x,y);printf("%c",179);x--;
+				git(x,y);printf("%c",191);y--;}
+			if (i==w-k+2){
+				git(x,y);printf("%c",218);x++;
+				git(x,y);printf("%c",179);x++;
+				git(x,y);printf("%c",217);y--;}
+				Sleep(1);
+		}
+		if (i==1) break;
+	}x--;y++;
+	git(x-1,y+(w-1-38)/2);printf("M A R M A R A  U N I V E R S I T E S I");
+	git(x,y+(w-1-36)/2);printf("T E K N O L O J I  F A K U L T E S I");
+	git(x+1,y+(w-1-44)/2);printf("B I L G I S A Y A R  M U H E N D I S L I G I");
+	git(x+2,y+(w-1-44)/2);printf("B I L G I S A Y A R  P R O G R A M L A M A 1");	
+	i=1;while(i<h){git(x+1+i,y+k/2);printf("%c",179);i++;Sleep(1);}	
+	while(1){
+		for(i=1;i<w;i++){
+			git(x+h+1,y);printf("%c",196);y++;
+		if (i==k){
+				git(x+h+1,y);printf("%c",217);x--;
+				git(x+h+1,y);printf("%c",179);x--;
+				git(x+h+1,y);printf("%c",218);y++;}
+				if (i==w-k){
+					git(x+h+1,y);printf("%c",191);x++;
+					git(x+h+1,y);printf("%c",179);x++;
+					git(x+h+1,y);printf("%c",192);y++;}
+					Sleep(1);
+		}x++;y--;
+		for(i=w;i>1;i--){
+			git(x+h+1,y);printf("%c",196);y--;
+			if (i==k+2){
+				git(x+h+1,y);printf("%c",192);x--;
+				git(x+h+1,y);printf("%c",179);x--;
+				git(x+h+1,y);printf("%c",191);y--;}
+			if (i==w-k+2){
+				git(x+h+1,y);printf("%c",218);x++;
+				git(x+h+1,y);printf("%c",179);x++;
+				git(x+h+1,y);printf("%c",217);y--;}
+				Sleep(1);
+		}
+		if (i==1) break;
+	}x--;y++;
+	git(x+h,y+(w-1-38)/2);printf("1 7 0 4 2 0 8 5 2   E M R E  C A K A R");
+	git(x+h+1,y+(w-1-38)/2);printf("1 7 0 4 1 8 0 4 5  A L I  B U R A K  G U L");
+	git(x+h+2,y+(w-1-38)/2);printf("1 7 0 4 2 0 8 5 1  Y A H Y A  G U L E R");
+	git(x+h+3,y+(w-1-38)/2);printf("1 7 0 4 1 9 5 0 6  Y U S U F  C E M  S E N");
+	i=h;while(i>1){git(x+i,y+w-k/2);printf("%c",179);i--;Sleep(1);}
+	i=0;
+	fp=fopen("hakkimizda.txt","rb+");
+	if(fp==NULL){printf("dosya okunamadi");exit(1); }
+	char line[120];
+	while(fgets(line,sizeof(line),fp)){
+		git(x+6+i,y+k/2+7);printf("%s",line);i++;
+	}
+	fclose(fp);
+}
+void Kontrol(){
+	if( DMSecim==0 & YMSecim==0 ){
+		// Kayıt - KisiselBilgiler Fonksiyonu
+		KisiselBilgi();VarsayilanDegerler();
+	}else if( DMSecim==0 & YMSecim==1 ){
+		// Kayıt - Yakina Ait bilgi Fonksiyonu
+		YakinaAitBilgi();VarsayilanDegerler();
+	}else if( DMSecim==0 & YMSecim==2 ){
+		// Kayıt - Saglik Bilgi Fonksiyonu
+		SaglikBilgi();VarsayilanDegerler();
+	}else if( DMSecim==0 & YMSecim==3 ){
+		// Kayıt - Kapat Fonksiyonu
+		Temizle();YMSecim=0;DikeyMenuSecim();
+	}else if( DMSecim==1 & YMSecim==0 ){
+		// Sakin - Listele Fonksiyonu
+		SakinListele();
+		//DosyaOku("sakinler.txt", 13,40);
+	}else if( DMSecim==1 & YMSecim==1 ){
+		// Sakin - Kapat ait Fonksiyonu
+		Temizle();YMSecim=0;DikeyMenuSecim();
+	}else if( DMSecim==2 & YMSecim==0 ){
+		// Ariza & Talep  - Ariza ait Fonksiyonu
+		ArizaListele("ariza.dat");
+	}else if( DMSecim==2 & YMSecim==1 ){
+		// Ariza & Talep  - Talep ait Fonksiyonu
+		ArizaListele("talepler.dat");
+	}else if( DMSecim==2 & YMSecim==2 ){
+		// Ariza & Talep  - Kapat ait Fonksiyonu
+		Temizle();YMSecim=0;DikeyMenuSecim();
+	}else if( DMSecim==3 & YMSecim==0 ){
+		// Personel - Listele ait Fonksiyonu
+		
+	}else if( DMSecim==3 & YMSecim==1 ){
+		// Personel - Kapat ait Fonksiyonu
+		Temizle();YMSecim=0;DikeyMenuSecim();
+	}else if( DMSecim==4 & YMSecim==0 ){
+		// Depo - Urun Giris Fonksiyonu
+		
+	}else if( DMSecim==4 & YMSecim==1 ){
+		// Depo - Urun Cikis Fonksiyonu
+		
+	}else if( DMSecim==4 & YMSecim==2 ){
+		// Depo - Listele Fonksiyonu
+		
+	}else if( DMSecim==4 & YMSecim==3 ){
+		// Depo - KAPAT Fonksiyonu
+		Temizle();YMSecim=0;DikeyMenuSecim();
+	}else if( DMSecim==5 & YMSecim==0 ){
+		// Gunluk - Kahvalti Fonksiyonu
+		
+	}else if( DMSecim==5 & YMSecim==1 ){
+		// Gunluk - Ogle Fonksiyonu
+		
+	}else if( DMSecim==5 & YMSecim==2 ){
+		// Gunluk - Aksam Fonksiyonu
+		
+	}else if( DMSecim==5 & YMSecim==3 ){
+		// Gunluk - Etkinlik Fonksiyonu
+		
+	}else if( DMSecim==5 & YMSecim==4 ){
+		// Gunluk - KAPAT Fonksiyonu
+		Temizle();YMSecim=0;DikeyMenuSecim();
+	}
+	
+}
+void YatayMenuSecim(){
+		durum=T;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 75:   //sol yön tuşu
+						Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),0);
+						YMSecim--;
+						break;
+					case 77:  // sağ yön tuşu
+						Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),0);
+						YMSecim++;
+						break;
+				}
+				YMSecim=(YMSecim==SolMenuBasliklari[DMSecim].AltBaslikAdet)?0:YMSecim;
+				YMSecim=(YMSecim==-1)?(SolMenuBasliklari[DMSecim].AltBaslikAdet-1):YMSecim;
+				Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),1);
+			}else if(tus==13){
+				durum=F;Kontrol(); //printf("%d %d",DMSecim,YMSecim);
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}
+}
+void DikeyMenuSecim(){
+		durum=T;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 72:   //yukarı yön tuşu
+						Isaretle(SMBaslama+2*DMSecim,(SMGenislik-SolMenuBasliklari[DMSecim].uzunluk)/2+3,SolMenuBasliklari[DMSecim].uzunluk,0);
+						DMSecim--;
+						break;
+					case 80:  // aşağı yön tuşu
+						Isaretle(SMBaslama+2*DMSecim,(SMGenislik-SolMenuBasliklari[DMSecim].uzunluk)/2+3,SolMenuBasliklari[DMSecim].uzunluk,0);
+						DMSecim++;
+						break;
+				}
+				DMSecim=(DMSecim==8)?0:DMSecim;
+				DMSecim=(DMSecim==-1)?7:DMSecim;
+				Isaretle(SMBaslama+2*DMSecim,(SMGenislik-SolMenuBasliklari[DMSecim].uzunluk)/2+3,SolMenuBasliklari[DMSecim].uzunluk,1);	
+			}else if(tus==13){
+				if (DMSecim==7){
+					durum=F;DMSecim=0;
+					sifreEkrani();
+				}else if(DMSecim==6){
+				//	hakkimizda(IcerikSatir,IcerikSutun-6,kolon-SMGenislik-10,satir-25);
+					hakkimizda(IcerikSatir,IcerikSutun,120,25);
+				}else{
+					durum=F;
+					YatayMenu(DMSecim, SolMenuBasliklari[DMSecim].AltBaslikAdet);YatayMenuSecim();
+				}
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}
+}
+
+void KYatayMenu(short s, short byt){
+	int i;
+	for(i=0;i<byt;i++){
+		git(YMSatir,YMSutun + YMGenislik*i);
+		printf("%s",SakinSolMenuBasliklari[s].AltBaslik[i]);
+	}
+	Isaretle(YMSatir,YMSutun,strlen(SakinSolMenuBasliklari[s].AltBaslik[0]),1);
+}
+void KDikeyMenuSecim(){
+		durum=T;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 72:   //yukarı yön tuşu
+						Isaretle(SMBaslama+2*DMSecim,(SMGenislik-SakinSolMenuBasliklari[DMSecim].uzunluk)/2+3,SakinSolMenuBasliklari[DMSecim].uzunluk,0);
+						DMSecim--;
+						break;
+					case 80:  // aşağı yön tuşu
+						Isaretle(SMBaslama+2*DMSecim,(SMGenislik-SakinSolMenuBasliklari[DMSecim].uzunluk)/2+3,SakinSolMenuBasliklari[DMSecim].uzunluk,0);
+						DMSecim++;
+						break;
+				}
+				DMSecim=(DMSecim==10)?0:DMSecim;
+				DMSecim=(DMSecim==-1)?9:DMSecim;
+				Isaretle(SMBaslama+2*DMSecim,(SMGenislik-SakinSolMenuBasliklari[DMSecim].uzunluk)/2+3,SakinSolMenuBasliklari[DMSecim].uzunluk,1);	
+			}else if(tus==13){
+				if (DMSecim==9){
+					durum=F;DMSecim=0;
+					sifreEkrani();
+				}else if(DMSecim==8){
+				//	hakkimizda(IcerikSatir,IcerikSutun-6,kolon-SMGenislik-10,satir-25);
+					hakkimizda(IcerikSatir,IcerikSutun,120,25);
+				}else{
+					durum=F;
+					KYatayMenu(DMSecim, SakinSolMenuBasliklari[DMSecim].AltBaslikAdet);KYatayMenuSecim();
+				}
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}
+}
+void KYatayMenuSecim(){
+		durum=T;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 75:   //sol yön tuşu
+						Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SakinSolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),0);
+						YMSecim--;
+						break;
+					case 77:  // sağ yön tuşu
+						Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SakinSolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),0);
+						YMSecim++;
+						break;
+				}
+				YMSecim=(YMSecim==SakinSolMenuBasliklari[DMSecim].AltBaslikAdet)?0:YMSecim;
+				YMSecim=(YMSecim==-1)?(SakinSolMenuBasliklari[DMSecim].AltBaslikAdet-1):YMSecim;
+				Isaretle(YMSatir,YMSutun+YMGenislik*YMSecim,strlen(SakinSolMenuBasliklari[DMSecim].AltBaslik[YMSecim]),1);
+			}else if(tus==13){
+				durum=F;Kontrol(); //printf("%d %d",DMSecim,YMSecim);
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}
+}
+void isimyaz(){
+	int i;
+	git(2,4);printf("%c",218);printf("%c",196);printf("%c",194);for(i=0;i<15;i++){printf("%c",196);}
+	git(3,4); printf("%c",179);printf("3  VELI DEMIR");git(3,6);printf("%c",179);
+	git(4,4);printf("%c",192);printf("%c",196);printf("%c",193);for(i=0;i<15;i++){printf("%c",196);}
+}
+
+void sifreEkrani(){
+	system("cls");
+	EkranTaslak();
+	char kadi[5]={0}, ssif[5]={0}, kkonr[5]={0};
+	
+	short i,j, girisS=0;
+	for(i=0;i<satir-YUKSEKLIK;i++){for(j=0;j<kolon;j++){if ( (j==30 || j==31) && (i>4 && i<(58-YUKSEKLIK)  ) ){git(i+1,j+1);printf(" ");}}}
+	
+	git( (satir-11)/2-10 ,(kolon-37)/2 );printf("%c",218);for(i=0;i<37;i++){printf("%c",196);}printf("%c",191);
+	git((satir-11)/2-10+1,(kolon-37)/2); printf("%c",179);printf("Kullanici Adi Giriniz");git((satir-11)/2-10+1,(kolon-37)/2+38);printf("%c",179);
+	git((satir-11)/2-10+2,(kolon-37)/2);printf("%c",192);for(i=0;i<37;i++){printf("%c",196);}printf("%c",217);
+	
+	git((satir-11)/2-10+4,(kolon-37)/2);printf("%c",218);for(i=0;i<37;i++){printf("%c",196);}printf("%c",191);
+	git((satir-11)/2-10+5,(kolon-37)/2); printf("%c",179);printf("Sifrenizi Giriniz");git((satir-11)/2-10+5,(kolon-37)/2+38);printf("%c",179);
+	git((satir-11)/2-10+6,(kolon-37)/2);printf("%c",192);for(i=0;i<37;i++){printf("%c",196);}printf("%c",217);
+	
+	git((satir-11)/2,(kolon-37)/2+14);printf("G I R I S");
+	
+	git( (satir-11)/2-10-1 ,(kolon-37)/2 );printf("Kullanici Adi");
+	git( (satir-11)/2-10+1 ,(kolon-37)/2+1); printf("                      ");
+		
+		
+		durum=T;
+		while(durum){
+		if(kbhit()){
+			tus=getch();
+			if(tus==224){
+				tus=getch();
+				switch(tus){
+					case 72:   //yukarı yön tuşu
+						if(girisS==0){
+							git( (satir-11)/2-10-1 ,(kolon-37)/2 ); printf("             ");
+							if( strcmp(kadi,kkonr) == 0 ){
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1);printf("Kullanici Adi Giriniz");
+							}else{
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1);printf("%s", kadi);
+							}
+							git((satir-11)/2-1,(kolon-37)/2+14-2);printf("%c",218);for(i=0;i<11;i++){printf("%c",196);}printf("%c",191);
+							git((satir-11)/2+1,(kolon-37)/2+14-2);printf("%c",192);for(i=0;i<11;i++){printf("%c",196);}printf("%c",217);
+							girisS=2;
+						}else if(girisS==1){
+							git( (satir-11)/2-10-1 ,(kolon-37)/2 );printf("Kullanici Adi");
+							if( strcmp(kadi,kkonr) == 0 ){
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1); printf("                      ");
+							}else{
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1);printf("%s", kadi);
+							}
+							
+							git( (satir-11)/2-10+5-2 ,(kolon-37)/2 );  printf("                 ");
+							if( strcmp(ssif,kkonr) == 0 ){
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1); printf("Sifrenizi Giriniz");
+							}else{
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1);printf("%s", ssif);
+							}
+							girisS=0;
+						}else if(girisS==2){
+							git( (satir-11)/2-10+5 -2,(kolon-37)/2 );  printf("Sifre");
+							if( strcmp(ssif,kkonr) == 0 ){
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1); printf("                 ");
+							}else{
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1);printf("%s", ssif);
+							}
+						
+							git((satir-11)/2-1,(kolon-37)/2+14-2);printf(" ");for(i=0;i<11;i++){printf(" ");}printf(" ");
+							git((satir-11)/2+1,(kolon-37)/2+14-2);printf(" ");for(i=0;i<11;i++){printf(" ");}printf(" ");
+							girisS=1;
+						}
+						break;
+					case 80:  // aşağı yön tuşu
+						if(girisS==0){
+							git( (satir-11)/2-10-1 ,(kolon-37)/2 ); printf("             ");
+							if( strcmp(kadi,kkonr) == 0 ){
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1);printf("Kullanici Adi Giriniz");
+							}else{
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1);printf("%s", kadi);
+								}
+							git( (satir-11)/2-10+5 -2,(kolon-37)/2 );  printf("Sifre");
+							if( strcmp(ssif,kkonr) == 0 ){
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1); printf("                 ");
+							}else{
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1);printf("%s", ssif);
+							}
+							girisS=1;
+						}else if(girisS==1){							
+							git( (satir-11)/2-10+5-2 ,(kolon-37)/2 );  printf("                 ");
+							if( strcmp(ssif,kkonr) == 0 ){
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1); printf("Sifrenizi Giriniz");
+							}else{
+								git( (satir-11)/2-10+5 ,(kolon-37)/2+1);printf("%s", ssif);
+							}
+							git((satir-11)/2-1,(kolon-37)/2+14-2);printf("%c",218);for(i=0;i<11;i++){printf("%c",196);}printf("%c",191);
+							git((satir-11)/2+1,(kolon-37)/2+14-2);printf("%c",192);for(i=0;i<11;i++){printf("%c",196);}printf("%c",217);
+							girisS=2;
+						}else if(girisS==2){
+							git( (satir-11)/2-10-1 ,(kolon-37)/2 );printf("Kullanici Adi");
+							if( strcmp(kadi,kkonr) == 0 ){
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1); printf("                      ");
+							}else{
+								git( (satir-11)/2-10+1 ,(kolon-37)/2+1);printf("%s", kadi);
+							}
+							git((satir-11)/2-1,(kolon-37)/2+14-2);printf(" ");for(i=0;i<11;i++){printf(" ");}printf(" ");
+							git((satir-11)/2+1,(kolon-37)/2+14-2);printf(" ");for(i=0;i<11;i++){printf(" ");}printf(" ");
+							girisS=0;
+						}
+						break;
+				}
+			}else if(tus==13){
+				if(girisS==0){
+					//Kullanici adi alımı
+					git( (satir-11)/2-10+1 ,(kolon-37)/2+1); printf("                      ");
+					git( (satir-11)/2-10+1 ,(kolon-37)/2+1);
+					printf("");
+					gets(kadi);
+				}else if(girisS==1){
+					// Sifre Alımı
+					git( (satir-11)/2-10+5 ,(kolon-37)/2+1); printf("                 ");
+					git( (satir-11)/2-10+5 ,(kolon-37)/2+1);
+					printf("");
+					gets(ssif);
+				}else if(girisS==2){
+					//Giriş Kontrolü
+					if( strcmp(kadi,"admin") == 0 && strcmp(ssif,"admin") == 0 ){
+						durum=F;system("cls");GirisKontrol=1;
+						EkranTaslak();
+						DikeyMenu(SolMenuBasliklari,8,SMBaslama,SMGenislik);DikeyMenuSecim();
+					}else if( strcmp(kadi,"vedem") == 0 && strcmp(ssif,"12345") == 0 ){
+						durum=F;system("cls");GirisKontrol=2;
+						EkranTaslak();
+						isimyaz();
+						DikeyMenu(SakinSolMenuBasliklari,10,SMBaslama,SMGenislik);KDikeyMenuSecim();
+					}
+				}
+			}
+		}
+		Sleep(60);	
+		TarihSaatBilgisi();
+	}	
+}
+
+int main(){
+	if (GirisKontrol==0){
+		sifreEkrani();
+	}else if(GirisKontrol==1){
+		EkranTaslak();
+		DikeyMenu(SolMenuBasliklari,8,SMBaslama,SMGenislik);DikeyMenuSecim();
+	}else if(GirisKontrol==2){
+		EkranTaslak();
+		isimyaz();
+		DikeyMenu(SakinSolMenuBasliklari,10,SMBaslama,SMGenislik);KDikeyMenuSecim();
+	}
+	return 0;
+}
+
+
